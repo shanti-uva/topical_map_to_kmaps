@@ -18,13 +18,13 @@ module TopicalMapToKmaps
   
   def self.import_relations(categories = TopicalMap::Category.order(:id))
     puts 'Importing category relations'
-    humanities = Perspective.get_by_code('hum')
+    general = Perspective.get_by_code('gen')
     categories.each do |c|
       puts "Importing category relations for #{c.id}"
       if !c.parent_id.nil?
         child_id = Feature.get_by_fid(c.id).id
         parent_id = Feature.get_by_fid(c.parent_id).id
-        FeatureRelation.create(:child_node_id => child_id, :parent_node_id => parent_id, :perspective_id => humanities.id, :feature_relation_type_id => c.cumulative? ? FeatureRelationType.get_by_code('is.part.of').id : FeatureRelationType.get_by_code('is.an.instantiation.of').id, :skip_update => true) if FeatureRelation.where(:child_node_id => child_id, :parent_node_id => parent_id).empty?
+        FeatureRelation.create(:child_node_id => child_id, :parent_node_id => parent_id, :perspective_id => general.id, :feature_relation_type_id => c.cumulative? ? FeatureRelationType.get_by_code('is.part.of').id : FeatureRelationType.get_by_code('is.an.instantiation.of').id, :skip_update => true) if FeatureRelation.where(:child_node_id => child_id, :parent_node_id => parent_id).empty?
       end
     end
   end
