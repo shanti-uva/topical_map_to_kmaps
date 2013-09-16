@@ -49,10 +49,6 @@ module TopicalMapToKmaps
       f.update_cached_feature_names
     end
     Feature.order(:fid).each do |f|
-      puts "Updating cached feature relation categories for #{f.fid}"
-      f.update_cached_feature_relation_categories
-    end
-    Feature.order(:fid).each do |f|
       puts "Expiring cache for #{f.fid}"
       Rails.cache.write('tree_tmp', f.id)
       f.expire_children_cache
