@@ -2,7 +2,7 @@ require "topical_map_to_kmaps/engine"
 
 module TopicalMapToKmaps
   def self.topical_map_database_yaml
-    settings = Rails.cache.fetch('topical_map/database.yml/hash', :expires_in => 1.day) do
+    settings = Rails.cache.fetch('topical_map/database.yml/hash', :expires_in => 1.week) do
       settings_file = Rails.root.join('config', 'topical_map_database.yml')
       settings_file.exist? ? YAML.load_file(settings_file) : {}
     end
@@ -50,7 +50,7 @@ module TopicalMapToKmaps
     end
     Feature.order(:fid).each do |f|
       puts "Expiring cache for #{f.fid}"
-      Rails.cache.write('tree_tmp', f.id)
+      #Rails.cache.write('tree_tmp', f.id)
       f.expire_children_cache
     end
     Feature.order(:fid).each do |f|
@@ -106,17 +106,17 @@ module TopicalMapToKmaps
       name = r[:name]
       case r[:type]
       when 10 # Chinese-Pinyin
-        parent = names.where(:language_id => Language.get_by_code('chi').id, :writing_system_id => [WritingSystem.get_by_code('hant').id, WritingSystem.get_by_code('hans').id]).order(:id).first
+        parent = names.where(:language_id => Language.get_by_code('zho').id, :writing_system_id => [WritingSystem.get_by_code('hant').id, WritingSystem.get_by_code('hans').id]).order(:id).first
         FeatureNameRelation.create :parent_node_id => parent.id, :child_node_id => name.id, :is_phonetic => true, :phonetic_system_id => PhoneticSystem.get_by_code('pinyin.transcrip').id, :skip_update => true
       when 11 # Tibetan-THL Wylie
-        parent = names.where(:language_id => Language.get_by_code('tib').id, :writing_system_id => WritingSystem.get_by_code('tibt').id).order(:id).first
+        parent = names.where(:language_id => Language.get_by_code('bod').id, :writing_system_id => WritingSystem.get_by_code('tibt').id).order(:id).first
         if parent.nil?
           FeatureNameRelation.create :parent_node_id => main_name.id, :child_node_id => name.id, :is_translation => true, :skip_update => true
         else
           FeatureNameRelation.create :parent_node_id => parent.id, :child_node_id => name.id, :is_orthographic => true, :orthographic_system_id => OrthographicSystem.get_by_code('thl.ext.wyl.translit').id, :skip_update => true
         end
       when 12 # Tibetan-THL Phonetics
-        parent = names.where(:language_id => Language.get_by_code('tib').id, :writing_system_id => WritingSystem.get_by_code('tibt').id).order(:id).first
+        parent = names.where(:language_id => Language.get_by_code('bod').id, :writing_system_id => WritingSystem.get_by_code('tibt').id).order(:id).first
         FeatureNameRelation.create :parent_node_id => parent.id, :child_node_id => name.id, :is_phonetic => true, :phonetic_system_id => PhoneticSystem.get_by_code('thl.simple.transcrip').id, :skip_update => true
       end
     end
@@ -125,11 +125,11 @@ module TopicalMapToKmaps
   def self.kmaps_language(language_id)
     case language_id
     when 1 then Language.get_by_code('eng') # English 
-    when 2, 11, 12, 17 then Language.get_by_code('tib') # Tibetan, Tibetan-THL Wylie, Tibetan-THL Phonetics, Tibetan (Amdo)
+    when 2, 11, 12, 17 then Language.get_by_code('bod') # Tibetan, Tibetan-THL Wylie, Tibetan-THL Phonetics, Tibetan (Amdo)
     when 3 then Language.get_by_code('dzo') # Dzongkha
     when 4 then Language.get_by_code('nep') # Nepali
     when 8, 14 then Language.get_by_code('san') # Sanskrit, Sanskrit-Transliterated
-    when 9, 10, 13 then Language.get_by_code('chi') # Chinese-Traditional, Chinese-Pinyin, Chinese-Simplified
+    when 9, 10, 13 then Language.get_by_code('zho') # Chinese-Traditional, Chinese-Pinyin, Chinese-Simplified
     end
   end
   
