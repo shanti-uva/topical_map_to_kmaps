@@ -51,7 +51,7 @@ module TopicalMapToKmaps
     Feature.order(:fid).each do |f|
       puts "Expiring cache for #{f.fid}"
       #Rails.cache.write('tree_tmp', f.id)
-      f.expire_children_cache
+      f.expire_tree_cache
     end
     Feature.order(:fid).each do |f|
       puts "Updating hierarchy for #{f.fid}"
