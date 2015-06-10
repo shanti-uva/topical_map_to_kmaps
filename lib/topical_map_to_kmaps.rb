@@ -2,7 +2,7 @@ require "topical_map_to_kmaps/engine"
 
 module TopicalMapToKmaps
   def self.topical_map_database_yaml
-    settings = Rails.cache.fetch('topical_map/database.yml/hash', :expires_in => 1.week) do
+    settings = Rails.cache.fetch('topical_map/database.yml/hash', :expires_in => 1.day) do
       settings_file = Rails.root.join('config', 'topical_map_database.yml')
       settings_file.exist? ? YAML.load_file(settings_file) : {}
     end
@@ -32,11 +32,11 @@ module TopicalMapToKmaps
   def self.import_categories(categories = TopicalMap::Category.order(:id))
     puts 'Importing authors'
     authors = TopicalMap::Person.select('author_id').uniq('author_id').from('authors_descriptions').collect{|a| TopicalMap::Person.find(a.author_id).fullname.strip}
-    authors.each { |fullname| AuthenticatedSystem::Person.create(:fullname => fullname) if AuthenticatedSystem::Person.find_by_fullname(fullname).nil? } 
+    authors.each { |fullname| AuthenticatedSystem::Person.create(:fullname => fullname) if AuthenticatedSystem::Person.find_by(fullname: fullname).nil? } 
     
     categories.each do |c|
       puts "Importing categories names and descriptions for #{c.id}"
-      f = Feature.find_by_fid(c.id)
+      f = Feature.find_by(fid: c.id)
       f = Feature.create(:is_public => c.published?, :fid => c.id) if f.nil?
       self.import_names(c, f)
       self.import_descriptions(c, f)
@@ -68,7 +68,7 @@ module TopicalMapToKmaps
   def self.import_descriptions(c, f)
     c.descriptions.order(:id).each do |d|
       next if !Description.where(:feature_id => f.id, :title => d.title).empty?
-      desc = f.descriptions.create :title => d.title, :is_primary => d.is_main?, :content => d.content, :author_ids => d.authors.collect{ |a| AuthenticatedSystem::Person.find_by_fullname(a.fullname.strip).id }
+      desc = f.descriptions.create :title => d.title, :is_primary => d.is_main?, :content => d.content, :author_ids => d.authors.collect{ |a| AuthenticatedSystem::Person.find_by(fullname: a.fullname.strip).id }
       d.sources.each do |s|
         note = s.note.nil? ? '' : s.note
         if !s.passage.blank?
@@ -88,12 +88,12 @@ module TopicalMapToKmaps
   
   def self.import_names(c, f)
     names = f.names
-    main_name = names.find_by_name(c.title)
+    main_name = names.find_by(name: c.title)
     main_name = names.create(:name => c.title, :language_id => Language.get_by_code('eng').id, :writing_system_id => WritingSystem.get_by_code('latin').id, :is_primary_for_romanization => true, :skip_update => true) if main_name.nil?
     pending_relations = []
     c.translated_titles.order(:id).each do |t|
       language_id = t.language.id
-      next if !names.find_by_name(t.title).nil?
+      next if !names.find_by(name: t.title).nil?
       name = names.create(:name => t.title, :language_id => self.kmaps_language(language_id).id, :writing_system_id => self.writing_system(language_id).id, :skip_update => true)
       case language_id
       when 1, 2, 3, 4, 8, 14, 9, 13, 17  # English, Tibetan, Dzongkha, Nepali, Sanskrit, Sanskrit-Transliterated, Chinese-Traditional, Chinese-Simplified, Tibetan (Amdo)

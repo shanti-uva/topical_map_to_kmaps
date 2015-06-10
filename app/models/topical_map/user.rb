@@ -24,7 +24,7 @@ module TopicalMap
     before_save { |record| record.encrypt_password }
     
     belongs_to :person
-    has_and_belongs_to_many :roles, :order => 'title'
+    has_and_belongs_to_many :roles, -> { order 'title' }
 
     # Virtual attribute for the unencrypted password
     attr_accessor :password
@@ -52,7 +52,6 @@ module TopicalMap
       end
     end
 
-    # has_and_belongs_to_many :roles, :order => 'title'
     # Some annoying naming conflict, but HABTM doesn't work, probably conflicting with OpenID gem.   
     def roles
       Role.find_by_sql(['SELECT roles.* FROM roles, roles_users WHERE roles.id = roles_users.role_id AND roles_users.user_id = ?', id])
@@ -60,7 +59,7 @@ module TopicalMap
 
     # Authenticates a user by their login name and unencrypted password.  Returns the user or nil.
     def self.authenticate(login, password)
-      u = find_by_login(login) # need to get the salt
+      u = self.find_by(login: login) # need to get the salt
       u && u.authenticated?(password) ? u : nil
     end
 
